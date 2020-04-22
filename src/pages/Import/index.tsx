@@ -1,12 +1,13 @@
+/* eslint-disable array-callback-return */
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
 import filesize from 'filesize';
-
+import { toast } from 'react-toastify';
+import ReactLoading from 'react-loading';
 import Header from '../../components/Header';
 import FileList from '../../components/FileList';
 import Upload from '../../components/Upload';
-
 import { Container, Title, ImportFileContainer, Footer } from './styles';
 
 import alert from '../../assets/alert.svg';
@@ -20,22 +21,35 @@ interface FileProps {
 
 const Import: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<FileProps[]>([]);
+  const [hasLoad, setHasLoad] = useState(false);
   const history = useHistory();
 
   async function handleUpload(): Promise<void> {
-    // const data = new FormData();
-
-    // TODO
-
+    const data = new FormData();
+    uploadedFiles.map(upload => {
+      data.set('file', upload.file, 'file');
+    });
+    setHasLoad(true);
     try {
-      // await api.post('/transactions/import', data);
+      await api.post('/transactions/import', data);
+      toast.success('Csv importado com sucesso !!');
+      history.push('/');
     } catch (err) {
-      // console.log(err.response.error);
+      setHasLoad(false);
+      toast.error(err.message);
     }
   }
 
   function submitFile(files: File[]): void {
-    // TODO
+    const newfiles: File[] = [];
+    files.map(file => {
+      const newFile: FileProps = {
+        file,
+        name: file.name,
+        readableSize: filesize(file.size),
+      };
+      setUploadedFiles([...uploadedFiles, newFile]);
+    });
   }
 
   return (
@@ -53,7 +67,7 @@ const Import: React.FC = () => {
               Permitido apenas arquivos CSV
             </p>
             <button onClick={handleUpload} type="button">
-              Enviar
+              {hasLoad ? <ReactLoading /> : 'Enviar'}
             </button>
           </Footer>
         </ImportFileContainer>
